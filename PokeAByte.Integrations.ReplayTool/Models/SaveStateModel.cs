@@ -6,8 +6,8 @@ namespace PokeAByte.Integrations.ReplayTool.Models;
 
 public record SaveStateModel
 {
-    [JsonIgnore] public const int ChunkSize = 1024; //todo: dynamic chunks
     public byte[] FirstState { get; set; } = [];
+    [JsonIgnore] public bool HasBeenReconstructed { get; set; } = false;
     public List<SaveState> SaveStates { get; set; } = [];
 }
 
@@ -18,10 +18,8 @@ public record SaveState : IComparable<SaveState>
     public bool IsFlagged { get; set; } = false;
     public string FlagName { get; set; } = "";
     public long SaveTimeMs { get; set; }
-    public Dictionary<int, byte[]> SaveStateDifferences { get; set; } = new();
-    public int ReconstructedStateSize { get; set; }
-    [JsonIgnore] public byte[] ReconstructedState { get; set; } = [];
-    
+    public byte[] StateDelta { get; set; } = [];
+    [JsonIgnore] public byte[] FullState { get; set; } = [];
     public override string ToString() => !string.IsNullOrWhiteSpace(FlagName) ? 
         $"#{Key} - Frame #{Frame} - {FlagName}" : 
         $"#{Key} - Frame #{Frame}";
