@@ -11,6 +11,7 @@
         <BIZHAWK_DATA_HOME>$(BIZHAWK_HOME)</BIZHAWK_DATA_HOME><!-- ignore this; on NixOS these are different dirs -->
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="FossilDelta" Version="0.1.0" />
         <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <Reference Include="System.Windows.Forms" />
