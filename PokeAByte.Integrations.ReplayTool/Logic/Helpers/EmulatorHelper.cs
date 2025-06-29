@@ -3,6 +3,7 @@ using System.IO;
 using BizHawk.Client.EmuHawk;
 using BizHawk.Common;
 using BizHawk.Emulation.Common;
+using PokeAByte.Integrations.ReplayTool.Models;
 
 namespace PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 
@@ -18,13 +19,19 @@ public static class EmulatorHelper
         return -1;
     }
 
-    public static byte[] GetStateBinary(MainForm mainForm, int lastSize = 0)
+    public static EmulatorSaveModel? SaveState(MainForm mainForm, int lastSize = 0)
     {
+        if (mainForm.Emulator is null)
+        {
+            Log.Error(nameof(EmulatorHelper), "Failed to get state binary: Emulator is null");
+            return null;
+        }
+        var frame = mainForm.Emulator.Frame;
         var statable = mainForm.Emulator?.AsStatable();
         if (statable is null)
         {
-            Log.Error(nameof(EmulatorHelper), "Failed to get state binary: Emulator is null");
-            return [];
+            Log.Error(nameof(EmulatorHelper), "Failed to get state binary: Statable emulator is null");
+            return null;
         }
         try
         {
@@ -34,12 +41,16 @@ public static class EmulatorHelper
             using var binaryWriter = new BinaryWriter(memoryStream);
             statable.SaveStateBinary(binaryWriter);
             binaryWriter.Flush();
-            return memoryStream.ToArray();
+            return new EmulatorSaveModel
+            {
+                Frame = frame,
+                SaveState = memoryStream.ToArray()
+            };
         }
         catch (Exception e)
         {
             Log.Error(nameof(EmulatorHelper), "Failed to get state binary: {e}", e);
-            return [];
+            return null;
         }
     }
 

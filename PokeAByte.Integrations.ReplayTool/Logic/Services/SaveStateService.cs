@@ -46,8 +46,9 @@ public class SaveStateService
     {
         while (!token.IsCancellationRequested)
         {
+            //Todo: debug, remove
             HandleSaveStateQueue();
-            Thread.Sleep(16);
+            Thread.Sleep(20);
         }
     }
     
@@ -60,7 +61,7 @@ public class SaveStateService
             //Todo: handle this
             return;
         }
-
+        
         if (!_saveStateQueue.TryDequeue(out var saveState))
         {
             //Todo: handle this
@@ -78,6 +79,9 @@ public class SaveStateService
         }
         else
         {
+            //todo: debug, remove
+            Log.Error(nameof(SaveStateService), $"Delta size: {delta.Length}");
+            
             saveState.StateDelta = delta;
             //clear the full state to reduce memory usage
             saveState.FullState = [];
