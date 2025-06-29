@@ -50,4 +50,22 @@ public static class SerializationHelper
         }
     }
     #endregion
+    public static byte[]? SerializeJson<T>(T classToSerialize)
+    {
+        using var memoryStream = new MemoryStream();
+        using var sw = new StreamWriter(memoryStream);
+        using var jsonWriter = new JsonTextWriter(sw);
+        try
+        {
+            var serializer = new JsonSerializer();
+            serializer.Serialize(jsonWriter, classToSerialize);
+            jsonWriter.Flush();
+            return memoryStream.ToArray();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return null;
+        }
+    }
 }

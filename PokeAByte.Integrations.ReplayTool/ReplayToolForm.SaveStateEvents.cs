@@ -1,4 +1,7 @@
-﻿using System.Timers;
+﻿using System;
+using System.IO;
+using System.Reflection;
+using System.Timers;
 using BizHawk.Common;
 using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 
@@ -37,8 +40,6 @@ public partial class ReplayToolForm
         }
         else
         {
-            //todo: debug, remove
-            Log.Error(nameof(SaveState), $"Saving state at frame {savestate.Frame}, state size: {savestate.SaveState.Length}");
             //todo: get timer for `saveTimeMs`
             _saveStateService.SaveState(savestate.Frame, savestate.SaveState, 0, isFlagged, flagName);
         }

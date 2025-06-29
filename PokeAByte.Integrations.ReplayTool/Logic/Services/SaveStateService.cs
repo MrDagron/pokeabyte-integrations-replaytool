@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Timers;
 using BizHawk.Common;
+using Newtonsoft.Json;
 using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 using PokeAByte.Integrations.ReplayTool.Models;
 using Timer = System.Timers.Timer;
@@ -26,7 +29,9 @@ public class SaveStateService
     private byte[] _lastState = [];
     private int _currentSize = 0;
     private bool _isSaving = false;
-
+    private string _saveFilePath = "";
+    private bool _shouldSave = false;
+    
     private Thread _workerThread;
     private CancellationTokenSource _cancellationTokenSource;
     
@@ -48,6 +53,7 @@ public class SaveStateService
         {
             //Todo: debug, remove
             HandleSaveStateQueue();
+            
             Thread.Sleep(20);
         }
     }
@@ -79,15 +85,15 @@ public class SaveStateService
         }
         else
         {
-            //todo: debug, remove
-            Log.Error(nameof(SaveStateService), $"Delta size: {delta.Length}");
-            
             saveState.StateDelta = delta;
+            saveState.StateDeltaSize = delta.Length;
+            saveState.FullStateSize = Fossil.Delta.OutputSize(delta);
             //clear the full state to reduce memory usage
             saveState.FullState = [];
             _saveStateModel.SaveStates.Add(saveState);
             //Update the last state
             _lastState = stateBytes;
+            _shouldSave = true; 
         }
     }
     
@@ -191,9 +197,10 @@ public class SaveStateService
     #endregion
     
     #region File Methods
+    //Todo: probably switch to memory mapped files to save instead of constantly deleting and resaving the file
     public void SaveToFile(string path)
     {
-        if (_isSaving)
+        if (_isSaving || !_shouldSave)
         {
             return;
         }

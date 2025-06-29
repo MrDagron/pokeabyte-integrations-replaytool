@@ -19,6 +19,10 @@ public record SaveState : IComparable<SaveState>
     public string FlagName { get; set; } = "";
     public long SaveTimeMs { get; set; }
     public byte[] StateDelta { get; set; } = [];
+    //temp
+    public int StateDeltaSize { get; set; } = 0;
+    //temp
+    public uint FullStateSize { get; set; } = 0;
     [JsonIgnore] public byte[] FullState { get; set; } = [];
     public override string ToString() => !string.IsNullOrWhiteSpace(FlagName) ? 
         $"#{Key} - Frame #{Frame} - {FlagName}" : 
