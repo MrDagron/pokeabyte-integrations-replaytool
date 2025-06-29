@@ -2,7 +2,7 @@
 using System.IO;
 using Newtonsoft.Json;
 
-namespace PokeAByte.Integrations.ReplayTool.Logic;
+namespace PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 
 /*
  * Todo:
@@ -13,6 +13,7 @@ namespace PokeAByte.Integrations.ReplayTool.Logic;
 
 public static class SerializationHelper
 {
+    #region Json File Serialization
     //Returns a string that is empty if the serialization was successful, otherwise it returns the exception message.
     public static string SerializeJsonToFile<T>(T toSerialize, string path)
     {
@@ -48,4 +49,5 @@ public static class SerializationHelper
             return ("Failed to deserialize from file: " + e,default);
         }
     }
+    #endregion
 }

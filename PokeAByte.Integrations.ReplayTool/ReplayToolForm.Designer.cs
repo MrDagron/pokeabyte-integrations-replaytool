@@ -9,8 +9,7 @@ public partial class ReplayToolForm
             // ReplayToolForm
             // 
             this.ClientSize = new System.Drawing.Size(376, 336);
-            this.Name = "ReplayToolForm";
+            this.Name = "PokeAByte Replay Tool";
             this.ResumeLayout(false);
-
     }
 }

@@ -26,6 +26,15 @@
       <Compile Update="ReplayToolForm.Events.cs">
         <DependentUpon>ReplayToolForm.cs</DependentUpon>
       </Compile>
+      <Compile Update="ReplayToolForm.SaveStateEvents.cs">
+        <DependentUpon>ReplayToolForm.cs</DependentUpon>
+      </Compile>
+      <Compile Update="ReplayToolForm.PlaybackEvents.cs">
+        <DependentUpon>ReplayToolForm.cs</DependentUpon>
+      </Compile>
+      <Compile Update="ReplayToolForm.RecordEvents.cs">
+        <DependentUpon>ReplayToolForm.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
     <ItemGroup>
       <Folder Include="Forms\" />

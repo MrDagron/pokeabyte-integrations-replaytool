@@ -4,7 +4,7 @@ using BizHawk.Client.EmuHawk;
 using BizHawk.Common;
 using BizHawk.Emulation.Common;
 
-namespace PokeAByte.Integrations.ReplayTool.Logic;
+namespace PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 
 public static class EmulatorHelper
 {

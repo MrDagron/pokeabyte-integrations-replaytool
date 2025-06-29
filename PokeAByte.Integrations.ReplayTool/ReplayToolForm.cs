@@ -2,6 +2,7 @@
 
 using BizHawk.Client.Common;
 using BizHawk.Client.EmuHawk;
+using PokeAByte.Integrations.ReplayTool.Logic.Services;
 
 namespace PokeAByte.Integrations.ReplayTool;
 
@@ -9,9 +10,10 @@ namespace PokeAByte.Integrations.ReplayTool;
 public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
 {
     protected override string WindowTitleStatic => "PokeAByte Replay Tool";
-
+    private readonly SaveStateService _saveStateService;
     public ReplayToolForm()
     {
+        _saveStateService = new SaveStateService();
         InitializeComponent();
     }
     public override void Restart() {

@@ -1,6 +1,6 @@
 ﻿namespace PokeAByte.Integrations.ReplayTool;
 
-//General events for GUI elements
+//Events that are required for Recording functionality
 public partial class ReplayToolForm
 {
     

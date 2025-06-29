@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Timers;
 using BizHawk.Common;
+using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 using PokeAByte.Integrations.ReplayTool.Models;
+using Timer = System.Timers.Timer;
 
-namespace PokeAByte.Integrations.ReplayTool.Logic;
+namespace PokeAByte.Integrations.ReplayTool.Logic.Services;
 //https://github.com/endel/FossilDelta/
 /*
  * TODO:
- * GetStateData (*)
- * LoadSaveState (*)
  * AddSaveRange (*)
  * UpdateSave
  * DeleteSave
@@ -21,24 +22,36 @@ namespace PokeAByte.Integrations.ReplayTool.Logic;
 public class SaveStateService
 {
     private SaveStateModel? _saveStateModel;
-    private ConcurrentQueue<SaveState> _saveStateQueue = new();
+    private readonly ConcurrentQueue<SaveState> _saveStateQueue = new();
     private byte[] _lastState = [];
     private int _currentSize = 0;
-    private Timer _queueTimer;
     private bool _isSaving = false;
+
+    private Thread _workerThread;
+    private CancellationTokenSource _cancellationTokenSource;
+    
     public SaveStateService()
     {
-        InitializeQueueTimer();
+        _cancellationTokenSource = new CancellationTokenSource();
+        _workerThread = new Thread(() => 
+            ProcessSaveStates(_cancellationTokenSource.Token))
+        {
+            IsBackground = true,
+            Name = "ProcessSaveStateQueueThread"
+        };
+        _workerThread.Start();
     }
-    private void InitializeQueueTimer()
+
+    private void ProcessSaveStates(CancellationToken token)
     {
-        _queueTimer = new Timer();
-        _queueTimer.Interval = 16;
-        _queueTimer.Elapsed += HandleSaveStateQueue;
-        _queueTimer.AutoReset = true;
-        _queueTimer.Start();
+        while (!token.IsCancellationRequested)
+        {
+            HandleSaveStateQueue();
+            Thread.Sleep(16);
+        }
     }
-    private void HandleSaveStateQueue(object sender, ElapsedEventArgs elapsedEventArgs)
+    
+    private void HandleSaveStateQueue()
     {
         if (_saveStateQueue.Count == 0 || 
             _lastState.Length == 0 ||
@@ -62,22 +75,31 @@ public class SaveStateService
         {
             Log.Error(nameof(SaveStateService), 
                 "Failed to get delta between states"); 
-            return;
         }
-        saveState.StateDelta = delta;
-        //clear the full state to reduce memory usage
-        saveState.FullState = [];
-        _saveStateModel.SaveStates.Add(saveState);
-        //Update the last state
-        _lastState = stateBytes;
+        else
+        {
+            saveState.StateDelta = delta;
+            //clear the full state to reduce memory usage
+            saveState.FullState = [];
+            _saveStateModel.SaveStates.Add(saveState);
+            //Update the last state
+            _lastState = stateBytes;
+        }
     }
     
+    #region SaveState Methods
     public void SaveState(int frame, 
         byte[] state, 
         long saveTimeMs,
         bool isFlagged = false, 
         string flagName = "")
     {
+        //Since we want to be on a different thread, let's make sure we make a local clone
+        //of the state before we do anything else
+        if (state.Clone() is not byte[] stateBytes)
+        {
+            throw new NullReferenceException("State is null");
+        }
         //If the _saveStateModel is not created then this should be the 
         //very first state created
         if (_saveStateModel == null)
@@ -85,7 +107,7 @@ public class SaveStateService
             _lastState = state;
             _saveStateModel = new SaveStateModel
             {
-                FirstState = state,
+                FirstState = stateBytes,
                 SaveStates = [],
             };
         }
@@ -97,7 +119,7 @@ public class SaveStateService
             IsFlagged = isFlagged,
             SaveTimeMs = saveTimeMs,
             StateDelta = [],
-            FullState = state,
+            FullState = stateBytes,
         });
         _currentSize += 1;
     }
@@ -133,13 +155,44 @@ public class SaveStateService
         _saveStateModel.HasBeenReconstructed = true;
     }
 
+    public byte[]? GetReconstructedState(int key)
+    {
+        if (_saveStateModel is null)
+        {
+            throw new NullReferenceException("SaveStateModel is null");
+        }
+
+        if (key < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(key), "Key must be greater than 0");
+        }
+
+        if (_saveStateModel.HasBeenReconstructed == false)
+        {
+            //try to reconstruct the saves once just to be safe
+            ReconstructSaveStates();
+            //If it still isn't reconstructed, then just throw an exception 
+            if (_saveStateModel.HasBeenReconstructed == false)
+            {
+                throw new InvalidOperationException("Failed to reconstruct save states");
+            }
+        }
+        var saveState = _saveStateModel.SaveStates.FirstOrDefault(s => s.Key == key);
+        if (saveState is null)
+        {
+            throw new InvalidOperationException($"Failed to find save state for key {key}");
+        }
+        return saveState.FullState;
+    }
+    #endregion
+    
+    #region File Methods
     public void SaveToFile(string path)
     {
         if (_isSaving)
         {
             return;
         }
-        _queueTimer.Stop();
         _isSaving = true;
 
         try
@@ -160,7 +213,6 @@ public class SaveStateService
         }
         
         _isSaving = false;
-        _queueTimer.Start();
     }
 
     public void LoadFromFile(string path)
@@ -169,7 +221,6 @@ public class SaveStateService
         {
             return;
         }
-        _queueTimer.Stop();
         try
         {
             var deserialized = SerializationHelper.DeserializeJsonFromFile<SaveStateModel>(path);
@@ -195,8 +246,6 @@ public class SaveStateService
             Log.Error(nameof(SaveStateService), 
                 "Failed to load from file: {e}", e);
         }
-        _queueTimer.Start();
     }
-    
- 
+    #endregion
 }
