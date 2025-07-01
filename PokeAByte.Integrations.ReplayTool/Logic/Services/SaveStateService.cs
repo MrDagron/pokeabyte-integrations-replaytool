@@ -31,6 +31,8 @@ public class SaveStateService
     private bool _isSaving = false;
     private string _saveFilePath = "";
     private bool _shouldSave = false;
+    //temp, allow user to choose or make it logical
+    private double _keyframePercent = 0.05;
     
     private Thread _workerThread;
     private CancellationTokenSource _cancellationTokenSource;
@@ -85,9 +87,10 @@ public class SaveStateService
         }
         else
         {
-            saveState.StateDelta = delta;
-            saveState.StateDeltaSize = delta.Length;
-            saveState.FullStateSize = Fossil.Delta.OutputSize(delta);
+            //compress the delta further
+            saveState.StateDelta = ZStdHelpers.Compress(delta);
+            /*saveState.StateDeltaSize = delta.Length;
+            saveState.CompressedDeltaSize = saveState.StateDelta.Length;*/
             //clear the full state to reduce memory usage
             saveState.FullState = [];
             _saveStateModel.SaveStates.Add(saveState);
@@ -134,37 +137,52 @@ public class SaveStateService
         _currentSize += 1;
     }
     
-    public void ReconstructSaveStates()
+    public void BuildKeyframes()
     {
         if (_saveStateModel is null)
         {
             return;
         }
+        var keyframeCount = (int)Math.Ceiling(_saveStateModel.SaveStates.Count * _keyframePercent);
+        var interval = Math.Max(1, _saveStateModel.SaveStates.Count / keyframeCount);
         var lastState = _saveStateModel.FirstState;
         foreach (var saveState in _saveStateModel.SaveStates)
         {
-            var delta = saveState.StateDelta;
-            if (delta.Length == 0)
+            var reconstructedState = ReconstructState(saveState.StateDelta, lastState);
+            if (reconstructedState.Length == 0)
             {
-                //Todo: figure out how we should handle this
-                Log.Error(nameof(SaveStateService), 
-                    "Failed to get delta between states");
                 return;
             }
-            var reconstructedState = Fossil.Delta.Apply(lastState, delta);
-            if (reconstructedState is null || reconstructedState.Length == 0)
+            if (saveState.Key % interval == 0)
             {
-                //Todo: figure out how we should handle this
-                Log.Error(nameof(SaveStateService), 
-                    "Failed to reconstruct state");
-                return;
+                saveState.FullState = reconstructedState;
+                saveState.IsKeyframe = true;
             }
-            saveState.FullState = reconstructedState;
             lastState = reconstructedState;
         }
         _saveStateModel.HasBeenReconstructed = true;
     }
 
+    private byte[] ReconstructState(byte[] stateDelta, byte[] lastState)
+    {
+        var delta = ZStdHelpers.Decompress(stateDelta);
+        if (delta.Length == 0)
+        {
+            //Todo: figure out how we should handle this
+            Log.Error(nameof(SaveStateService), 
+                "Failed to get delta between states");
+            return [];
+        }
+        var reconstructedState = Fossil.Delta.Apply(lastState, delta);
+        if (reconstructedState is null || reconstructedState.Length == 0)
+        {
+            //Todo: figure out how we should handle this
+            Log.Error(nameof(SaveStateService), 
+                "Failed to reconstruct state");
+            return [];
+        }
+        return reconstructedState;
+    }
     public byte[]? GetReconstructedState(int key)
     {
         if (_saveStateModel is null)
@@ -180,7 +198,7 @@ public class SaveStateService
         if (_saveStateModel.HasBeenReconstructed == false)
         {
             //try to reconstruct the saves once just to be safe
-            ReconstructSaveStates();
+            BuildKeyframes();
             //If it still isn't reconstructed, then just throw an exception 
             if (_saveStateModel.HasBeenReconstructed == false)
             {
@@ -192,7 +210,41 @@ public class SaveStateService
         {
             throw new InvalidOperationException($"Failed to find save state for key {key}");
         }
-        return saveState.FullState;
+
+        //This frame is a keyframe, return it
+        if (saveState.IsKeyframe)
+        {
+            return saveState.FullState;
+        }
+        
+        //backtrack to the last keyframe closest to this key
+        var lastKeyframe = _saveStateModel.SaveStates
+            .LastOrDefault(s => s.IsKeyframe && s.Key <= key);
+        if (lastKeyframe is null)
+        {
+            //todo: think about this more
+            throw new InvalidOperationException($"Failed to find last keyframe for key {key}");
+        }
+        return ReconstructToKey(saveState.Key, lastKeyframe);
+    }
+
+    private byte[] ReconstructToKey(int key, SaveState startState)
+    {
+        if (_saveStateModel is null)
+        {
+            return [];
+        }
+        var lastState = startState.FullState;
+        foreach (var saveState in _saveStateModel.SaveStates.Where(s => s.Key > startState.Key && s.Key <= key))
+        {
+            var currentState = ReconstructState(saveState.StateDelta, lastState);
+            if (currentState.Length == 0)
+            {
+                return [];
+            }
+            lastState = currentState;
+        }
+        return lastState;
     }
     #endregion
     
@@ -259,4 +311,32 @@ public class SaveStateService
         }
     }
     #endregion
+    
+    //debugging helpers
+    public int GetKeyframeCount()
+    {
+        if (_saveStateModel is null)
+        {
+            return 0;
+        }
+        return _saveStateModel.SaveStates.Count(s => s.IsKeyframe);
+    }
+
+    public int GetReconstructedStatesTotal()
+    {
+        if (_saveStateModel is null)
+        {
+            return 0;
+        }
+        return _saveStateModel.SaveStates.Count(s => s.FullState.Length > 0);
+    }
+
+    public int GetStateCount()
+    {
+        if (_saveStateModel is null)
+        {
+            return 0;
+        }
+        return _saveStateModel.SaveStates.Count;
+    }
 }
