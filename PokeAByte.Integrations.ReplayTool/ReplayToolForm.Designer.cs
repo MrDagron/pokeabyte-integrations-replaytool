@@ -1,4 +1,6 @@
-﻿using PokeAByte.Integrations.ReplayTool.UI;
+﻿using System.Drawing;
+using System.Windows.Forms;
+using PokeAByte.Integrations.ReplayTool.UI;
 
 namespace PokeAByte.Integrations.ReplayTool;
 
@@ -40,6 +42,7 @@ public partial class ReplayToolForm
             this.ClientSize = new System.Drawing.Size(376, 336);
             this.Controls.Add(this.doStuffBtn);
             this.Controls.Add(this.timeScrubber);
+            this.Controls.Add(this.EDPSLabel);
             this.Name = "ReplayToolForm";
             this.ResumeLayout(false);
 
@@ -47,4 +50,11 @@ public partial class ReplayToolForm
 
     private System.Windows.Forms.Button doStuffBtn;
     private TimeScrubber timeScrubber;
+    private readonly Label EDPSLabel = new()
+    {
+        Text = "Loading...",
+        Height = 50,
+        TextAlign = ContentAlignment.MiddleCenter,
+        Dock = DockStyle.Top
+    };
 }
