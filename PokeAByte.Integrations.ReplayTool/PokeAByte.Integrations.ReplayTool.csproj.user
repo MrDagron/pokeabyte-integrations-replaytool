@@ -5,6 +5,9 @@
     <Compile Update="ReplayToolForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="ReplayToolForm.EDPS.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="ReplayToolForm.Events.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -3,6 +3,7 @@
         <LangVersion>12.0</LangVersion>
         <Nullable>enable</Nullable>
         <TargetFramework>net48</TargetFramework>
+        <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(BIZHAWK_HOME)' == '' ">
         <BIZHAWK_HOME>$(ProjectDir)../BizHawk/</BIZHAWK_HOME><!-- if building EmuHawk from source, point to e.g. `$(ProjectDir)../BizHawk/output/` -->
@@ -15,6 +16,7 @@
         <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="ZstdSharp.Port" Version="0.8.5" />
+        <PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
         <Reference Include="System.Windows.Forms" />
         <Reference Include="BizHawk.Client.Common" HintPath="$(BIZHAWK_HOME)dll/BizHawk.Client.Common.dll" />
         <Reference Include="BizHawk.Client.EmuHawk" HintPath="$(BIZHAWK_HOME)EmuHawk.exe" />
@@ -34,6 +36,9 @@
         <DependentUpon>ReplayToolForm.cs</DependentUpon>
       </Compile>
       <Compile Update="ReplayToolForm.RecordEvents.cs">
+        <DependentUpon>ReplayToolForm.cs</DependentUpon>
+      </Compile>
+      <Compile Update="ReplayToolForm.EDPS.cs">
         <DependentUpon>ReplayToolForm.cs</DependentUpon>
       </Compile>
     </ItemGroup>
