@@ -9,6 +9,7 @@ public record SaveStateModel
     public byte[] FirstState { get; set; } = [];
     [JsonIgnore] public bool HasBeenReconstructed { get; set; } = false;
     public List<SaveState> SaveStates { get; set; } = [];
+    public List<int> Keyframes { get; set; } = [];
 }
 
 public record SaveState : IComparable<SaveState>
@@ -19,12 +20,8 @@ public record SaveState : IComparable<SaveState>
     public string FlagName { get; set; } = "";
     public long SaveTimeMs { get; set; }
     public byte[] StateDelta { get; set; } = [];
-    /*//temp
-    public int StateDeltaSize { get; set; } = 0;
-    //temp
-    public int CompressedDeltaSize { get; set; } = 0;*/
     [JsonIgnore] public byte[] FullState { get; set; } = [];
-    [JsonIgnore] public bool IsKeyframe { get; set; }
+    public bool IsKeyframe { get; set; }
 
     public override string ToString() => !string.IsNullOrWhiteSpace(FlagName) ? 
         $"#{Key} - Frame #{Frame} - {FlagName}" : 

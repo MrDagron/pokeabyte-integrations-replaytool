@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -27,6 +28,7 @@ public class SaveStateService
     private SaveStateModel? _saveStateModel;
     private readonly ConcurrentQueue<SaveState> _saveStateQueue = new();
     private byte[] _lastState = [];
+    private (int key, byte[] frame) _lastKeyframe;
     private int _currentSize = 0;
     private bool _isSaving = false;
     private string _saveFilePath = "";
@@ -53,9 +55,7 @@ public class SaveStateService
     {
         while (!token.IsCancellationRequested)
         {
-            //Todo: debug, remove
             HandleSaveStateQueue();
-            
             Thread.Sleep(20);
         }
     }
@@ -89,11 +89,13 @@ public class SaveStateService
         {
             //compress the delta further
             saveState.StateDelta = ZStdHelpers.Compress(delta);
-            /*saveState.StateDeltaSize = delta.Length;
-            saveState.CompressedDeltaSize = saveState.StateDelta.Length;*/
             //clear the full state to reduce memory usage
             saveState.FullState = [];
             _saveStateModel.SaveStates.Add(saveState);
+            if (saveState.IsKeyframe)
+            {
+                _saveStateModel.Keyframes.Add(saveState.Key);
+            }
             //Update the last state
             _lastState = stateBytes;
             _shouldSave = true; 
@@ -104,6 +106,7 @@ public class SaveStateService
     public void SaveState(int frame, 
         byte[] state, 
         long saveTimeMs,
+        bool isKeyframe = false,
         bool isFlagged = false, 
         string flagName = "")
     {
@@ -133,32 +136,59 @@ public class SaveStateService
             SaveTimeMs = saveTimeMs,
             StateDelta = [],
             FullState = stateBytes,
+            IsKeyframe = isKeyframe
         });
         _currentSize += 1;
     }
     
-    public void BuildKeyframes()
+    private void BuildSaveStates()
     {
         if (_saveStateModel is null)
         {
             return;
         }
-        var keyframeCount = (int)Math.Ceiling(_saveStateModel.SaveStates.Count * _keyframePercent);
-        var interval = Math.Max(1, _saveStateModel.SaveStates.Count / keyframeCount);
-        var lastState = _saveStateModel.FirstState;
-        foreach (var saveState in _saveStateModel.SaveStates)
+        //Check if we already saved which frames should be keyframes
+        if (_saveStateModel.Keyframes.Count > 0)
         {
-            var reconstructedState = ReconstructState(saveState.StateDelta, lastState);
-            if (reconstructedState.Length == 0)
+            var lastState = _saveStateModel.FirstState;
+            foreach(var saveState in _saveStateModel.SaveStates)
             {
-                return;
+                var reconstructedState = ReconstructState(saveState.StateDelta, lastState);
+                if (reconstructedState.Length == 0)
+                {
+                    return;
+                }
+                if (_saveStateModel.Keyframes.Contains(saveState.Key))
+                {
+                    saveState.FullState = reconstructedState;
+                    saveState.IsKeyframe = true;
+                }
+                lastState = reconstructedState;
             }
-            if (saveState.Key % interval == 0)
+        }
+        else //Otherwise let's automatically build them
+        {
+            var keyframeList = new List<int>();
+            var keyframeCount = (int)Math.Ceiling(_saveStateModel.SaveStates.Count * _keyframePercent);
+            var interval = Math.Max(1, _saveStateModel.SaveStates.Count / keyframeCount);
+            var lastState = _saveStateModel.FirstState;
+            foreach (var saveState in _saveStateModel.SaveStates)
             {
-                saveState.FullState = reconstructedState;
-                saveState.IsKeyframe = true;
+                var reconstructedState = ReconstructState(saveState.StateDelta, lastState);
+                if (reconstructedState.Length == 0)
+                {
+                    return;
+                }
+                if (saveState.Key % interval == 0)
+                {
+                    saveState.FullState = reconstructedState;
+                    saveState.IsKeyframe = true;
+                    keyframeList.Add(saveState.Key);
+                }
+                lastState = reconstructedState;
             }
-            lastState = reconstructedState;
+            //store the keyframes for later
+            _saveStateModel.Keyframes = keyframeList;
         }
         _saveStateModel.HasBeenReconstructed = true;
     }
@@ -198,7 +228,7 @@ public class SaveStateService
         if (_saveStateModel.HasBeenReconstructed == false)
         {
             //try to reconstruct the saves once just to be safe
-            BuildKeyframes();
+            BuildSaveStates();
             //If it still isn't reconstructed, then just throw an exception 
             if (_saveStateModel.HasBeenReconstructed == false)
             {
@@ -216,26 +246,35 @@ public class SaveStateService
         {
             return saveState.FullState;
         }
-        
+  
         //backtrack to the last keyframe closest to this key
-        var lastKeyframe = _saveStateModel.SaveStates
+        var lastKeyframeState = _saveStateModel.SaveStates
             .LastOrDefault(s => s.IsKeyframe && s.Key <= key);
-        if (lastKeyframe is null)
+        if (lastKeyframeState is null)
         {
             //todo: think about this more
             throw new InvalidOperationException($"Failed to find last keyframe for key {key}");
         }
-        return ReconstructToKey(saveState.Key, lastKeyframe);
+
+        (int key, byte[] frame) lastKeyframe = new(lastKeyframeState.Key, lastKeyframeState.FullState);
+        //Check to see if the cached frame is closer
+        if (_lastKeyframe.key - saveState.Key  < lastKeyframe.key - saveState.Key )
+        {
+            lastKeyframe = _lastKeyframe;
+        }
+        //cache the last keyframe
+        _lastKeyframe = new ValueTuple<int, byte[]>(saveState.Key,ReconstructToKey(saveState.Key, lastKeyframe));
+        return _lastKeyframe.frame;
     }
 
-    private byte[] ReconstructToKey(int key, SaveState startState)
+    private byte[] ReconstructToKey(int key, (int key, byte[] frame) startState)
     {
         if (_saveStateModel is null)
         {
             return [];
         }
-        var lastState = startState.FullState;
-        foreach (var saveState in _saveStateModel.SaveStates.Where(s => s.Key > startState.Key && s.Key <= key))
+        var lastState = startState.frame;
+        foreach (var saveState in _saveStateModel.SaveStates.Where(s => s.Key > startState.key && s.Key <= key))
         {
             var currentState = ReconstructState(saveState.StateDelta, lastState);
             if (currentState.Length == 0)
@@ -290,10 +329,9 @@ public class SaveStateService
             if (!string.IsNullOrEmpty(deserialized.Message))
             {
                 Log.Error(nameof(SaveStateService), 
-                    "Failed to load from file: {deserializeMessage.Item1}", 
+                    "Failed to load from file: {deserialized.Message}", 
                     deserialized.Message);
             }
-
             else if (deserialized.Data is null)
             {
                 Log.Error(nameof(SaveStateService), 
@@ -302,6 +340,7 @@ public class SaveStateService
             else
             {
                 _saveStateModel = deserialized.Data;
+                BuildSaveStates();
             }
         }
         catch (Exception e)
@@ -311,7 +350,10 @@ public class SaveStateService
         }
     }
     #endregion
-    
+    public int GetStateCount()
+    {
+        return _saveStateModel is null ? 0 : _saveStateModel.SaveStates.Count;
+    }
     //debugging helpers
     public int GetKeyframeCount()
     {
@@ -329,14 +371,5 @@ public class SaveStateService
             return 0;
         }
         return _saveStateModel.SaveStates.Count(s => s.FullState.Length > 0);
-    }
-
-    public int GetStateCount()
-    {
-        if (_saveStateModel is null)
-        {
-            return 0;
-        }
-        return _saveStateModel.SaveStates.Count;
     }
 }
