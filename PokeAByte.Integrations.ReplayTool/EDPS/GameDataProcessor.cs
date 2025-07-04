@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 using BizHawk.Common;
 using BizHawk.Emulation.Common;
@@ -22,7 +23,9 @@ internal class GameDataProcessor : IDisposable
     private MemoryMappedFile _memoryMappedFile;
 
     private byte[] DataBuffer { get; } = new byte[4 * 1024 * 1024];
-
+    private Thread _backgroundCopy;
+    private bool _copyReady;
+    private object _copyLock = new();
 
     internal GameDataProcessor(
         PlatformEntry platform,
@@ -75,6 +78,22 @@ internal class GameDataProcessor : IDisposable
         }
         _writeBuffer = new byte[totalSize];
         mainLabel.Text = $"Providing memory data ({totalSize} bytes) to client...";
+        _backgroundCopy = new Thread(this.CopyData);
+        _backgroundCopy.Start();
+    }
+
+    private void CopyData()
+    {
+        while (true)
+        {
+
+            SpinWait.SpinUntil(() => _copyReady);
+            lock (_copyLock)
+            {
+                _dataAccessor.WriteArray(0, _writeBuffer, 0, _writeBuffer.Length);
+                _copyReady = false;
+            }
+        }
     }
 
     private void GetMMFAccessor(int size)
@@ -115,6 +134,7 @@ internal class GameDataProcessor : IDisposable
             _skippedFrames++;
             return;
         }
+        SpinWait.SpinUntil(() => !_copyReady);
         DomainReadInstruction instruction = _readInstructions[0];
         try
         {
@@ -130,7 +150,13 @@ internal class GameDataProcessor : IDisposable
                 {
                     var length = instruction.RelativeEnd - instruction.RelativeStart;
                     domain.BulkPeekByte(instruction.RelativeStart.RangeToExclusive(instruction.RelativeEnd), DataBuffer);
-                    Buffer.BlockCopy(DataBuffer, 0, _writeBuffer, (int)instruction.TransferPosition, (int)length);
+                    Buffer.BlockCopy(
+                        DataBuffer,
+                        0,
+                        _writeBuffer,
+                        (int)instruction.TransferPosition,
+                        (int)length
+                    );
                 }
             }
         }
@@ -138,11 +164,17 @@ internal class GameDataProcessor : IDisposable
         {
             _mainLabel.Text = $"Error reading {instruction.RelativeStart:x2} in '{instruction.Domain}': {ex.Message}";
         }
-        _dataAccessor.WriteArray(0, _writeBuffer, 0, _writeBuffer.Length);
+
+        // signal the other thread that copying can be done:
+        lock (_copyLock)
+        {
+            _copyReady = true;
+        }
     }
 
     public void Dispose()
     {
+        _backgroundCopy.Abort();
         this._dataAccessor.Dispose();
         this._memoryMappedFile.Dispose();
         if (File.Exists($"/dev/shm/{SharedConstants.MemoryMappedFileName}"))

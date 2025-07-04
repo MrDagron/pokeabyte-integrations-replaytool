@@ -41,7 +41,7 @@ public partial class ReplayToolForm
         else
         {
             //todo: get timer for `saveTimeMs`
-            _saveStateService.SaveState(savestate.Frame, savestate.SaveState, 0, isFlagged, flagName);
+            _saveStateService.SaveState(savestate.Frame, savestate.SaveState, 0, false, isFlagged, flagName);
         }
         _saveStateTimer.Start();
         _shouldSaveState = false;

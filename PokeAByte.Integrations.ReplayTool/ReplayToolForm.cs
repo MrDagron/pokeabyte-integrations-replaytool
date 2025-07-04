@@ -46,6 +46,12 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         // executed once after the constructor, and again every time a rom is loaded or reloaded
         EDPSRestart();
     }
+    //tmp remove
+    private int fpsSum = 0;
+    private int fpsAvg = 0;
+    private int count = 0;
+    private int low = 1000;
+    private int high = 0;
     protected override void UpdateAfter() {
         // executed after every frame (except while turboing, use FastUpdateAfter for that)
         SaveState();
@@ -53,11 +59,30 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         {   
             this._processor?.Update(this.MemoryDomains);
         }
+
+        count++;
+        fpsSum += PokeAByteMainForm.GetApproxFramerate();
+        fpsAvg = fpsSum / count;
+        if (fpsAvg > high)
+        {
+            high = fpsAvg;
+        }
+
+        if (fpsAvg < low)
+        {
+            low = fpsAvg;
+        }
+        fpsLabel.Text = $"FPS - Avg: {fpsAvg}, Low: {low}, High: {high}, Count: {count}";
     }
     //Temp, remove
     private void doStuffBtn_Click(object sender, EventArgs e)
     {
-        if (_isRecording)
+        count = 0;
+        fpsAvg = 0;
+        fpsSum = 0;
+        low = 1000;
+        high = 0;
+        /*if (_isRecording)
         {
             _isRecording = false;
             _saveStateTimer?.Stop();
@@ -80,15 +105,15 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
             _saveStateTimer?.Start();
             Log.Error("", "Start recording");
             doStuffBtn.Text = "Stop doing stuff";
-        }
+        }*/
         //
         /*_saveStateService.LoadFromFile(path);
         _saveStateService.ReconstructSaveStates();
-        
+
         Log.Error("", $"Total States: {_saveStateService.GetStateCount()}");
         Log.Error("", $"Total Keyframes: {_saveStateService.GetKeyframeCount()}");
         Log.Error("", $"Total Reconstructed States: {_saveStateService.GetReconstructedStatesTotal()}");*/
-        
+
         /*var state = _saveStateService.GetReconstructedState(813);
         if (state is not null)
             EmulatorHelper.LoadStateBinary(PokeAByteMainForm, state);*/
@@ -97,7 +122,7 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         {
             PokeAByteMainForm.SeekFrameAdvance();
         }
-        
+
         PokeAByteMainForm.InvisibleEmulation = false;
         PokeAByteMainForm.UnpauseEmulator();*/
     }

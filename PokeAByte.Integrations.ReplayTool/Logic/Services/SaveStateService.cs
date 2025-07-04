@@ -246,7 +246,7 @@ public class SaveStateService
         {
             return saveState.FullState;
         }
-  
+        
         //backtrack to the last keyframe closest to this key
         var lastKeyframeState = _saveStateModel.SaveStates
             .LastOrDefault(s => s.IsKeyframe && s.Key <= key);
