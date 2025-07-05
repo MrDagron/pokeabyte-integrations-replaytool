@@ -41,6 +41,7 @@ public partial class ReplayToolForm
             this.flaggedSavesPage = new System.Windows.Forms.TabPage();
             this.keyframeSavesPage = new System.Windows.Forms.TabPage();
             this.EDPSLabel = new System.Windows.Forms.Label();
+            this.tcpServerLabel = new System.Windows.Forms.Label();
             this.menuStrip1.SuspendLayout();
             this.mainFormTabs.SuspendLayout();
             this.recordingTab.SuspendLayout();
@@ -321,7 +322,7 @@ public partial class ReplayToolForm
             this.flaggedSavesPage.Location = new System.Drawing.Point(4, 22);
             this.flaggedSavesPage.Name = "flaggedSavesPage";
             this.flaggedSavesPage.Padding = new System.Windows.Forms.Padding(3);
-            this.flaggedSavesPage.Size = new System.Drawing.Size(1260, 401);
+            this.flaggedSavesPage.Size = new System.Drawing.Size(1260, 385);
             this.flaggedSavesPage.TabIndex = 1;
             this.flaggedSavesPage.Text = "Flagged Saves";
             this.flaggedSavesPage.UseVisualStyleBackColor = true;
@@ -331,7 +332,7 @@ public partial class ReplayToolForm
             this.keyframeSavesPage.Location = new System.Drawing.Point(4, 22);
             this.keyframeSavesPage.Name = "keyframeSavesPage";
             this.keyframeSavesPage.Padding = new System.Windows.Forms.Padding(3);
-            this.keyframeSavesPage.Size = new System.Drawing.Size(1260, 401);
+            this.keyframeSavesPage.Size = new System.Drawing.Size(1260, 385);
             this.keyframeSavesPage.TabIndex = 1;
             this.keyframeSavesPage.Text = "Keyframes";
             this.keyframeSavesPage.UseVisualStyleBackColor = true;
@@ -346,9 +347,19 @@ public partial class ReplayToolForm
             this.EDPSLabel.TabIndex = 24;
             this.EDPSLabel.Text = "Loading...";
             // 
+            // tcpServerLabel
+            // 
+            this.tcpServerLabel.AutoSize = true;
+            this.tcpServerLabel.Location = new System.Drawing.Point(464, 24);
+            this.tcpServerLabel.Name = "tcpServerLabel";
+            this.tcpServerLabel.Size = new System.Drawing.Size(104, 13);
+            this.tcpServerLabel.TabIndex = 25;
+            this.tcpServerLabel.Text = "Waiting for overlay...";
+            // 
             // ReplayToolForm
             // 
             this.ClientSize = new System.Drawing.Size(1282, 528);
+            this.Controls.Add(this.tcpServerLabel);
             this.Controls.Add(this.EDPSLabel);
             this.Controls.Add(this.mainFormTabs);
             this.Controls.Add(this.menuStrip1);
@@ -397,4 +408,5 @@ public partial class ReplayToolForm
     private Button stopPlaybackBtn;
     private Button lastStatePlaybackBtn;
     private TimeScrubber playbackScrubber;
+    private Label tcpServerLabel;
 }

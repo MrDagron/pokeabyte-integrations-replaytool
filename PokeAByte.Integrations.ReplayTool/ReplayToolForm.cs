@@ -1,21 +1,10 @@
 ﻿using System;
 using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Windows.Forms;
-
 using BizHawk.Client.Common;
 using BizHawk.Client.EmuHawk;
 using BizHawk.Common;
-using BizHawk.Emulation.Common;
-using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 using PokeAByte.Integrations.ReplayTool.Logic.Services;
 using PokeAByte.Integrations.ReplayTool.Models;
-using PokeAByte.Protocol;
-using PokeAByte.Protocol.BizHawk;
-using PokeAByte.Protocol.BizHawk.PlatformData;
 
 namespace PokeAByte.Integrations.ReplayTool;
 
@@ -28,6 +17,7 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
     private MainForm PokeAByteMainForm => (MainForm)MainForm;
     
     private readonly SaveStateService _saveStateService;
+    private readonly TcpServerService _tcpServerService;
     private readonly RecordingSettings _recordingSettings;
     private bool _inRecordingMode = true;
     public ReplayToolForm()
@@ -55,14 +45,20 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
                 recordingTab.Width,
                 recordingTab.Height + mainFormTabs.ItemSize.Height));*/
         StartServer();
+        //todo: connection settings?
+        _tcpServerService = new TcpServerService
+        {
+            OnMessageReceived = OnTcpServerMessage,
+            OnConnected = OnTcpServerConnected,
+            OnDisconnected = OnTcpServerDisconnected
+        };
+        _tcpServerService.Start();
     }
 
     public override void Restart() {
         // executed once after the constructor, and again every time a rom is loaded or reloaded
         EDPSRestart();
     }
-
-    private int test = 0;
     protected override void UpdateAfter() {
         // executed after every frame (except while turboing, use FastUpdateAfter for that)
         SaveState();
@@ -70,6 +66,22 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         {   
             this._processor?.Update(this.MemoryDomains);
         }
+    }
+    //temp, find a better place for this
+    private void OnTcpServerMessage(string message)
+    {
+        //debug code, change later
+        Log.Error("", message);
+    }
+
+    private void OnTcpServerConnected(string connectedTo)
+    {
+        tcpServerLabel.Text = $"Overlay Connected: {connectedTo}";
+    }
+
+    private void OnTcpServerDisconnected()
+    {
+        tcpServerLabel.Text = "Waiting for overlay...";
     }
     //Temp, remove
     private void doStuffBtn_Click(object sender, EventArgs e)

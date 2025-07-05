@@ -96,7 +96,6 @@ public class SaveStateService
         }
     }
     
-    #region SaveState Methods
     public void SaveState(int frame, 
         byte[] state, 
         long saveTimeMs,
@@ -279,9 +278,7 @@ public class SaveStateService
         }
         return lastState;
     }
-    #endregion
     
-    #region File Methods
     //Todo: probably switch to memory mapped files to save instead of constantly deleting and resaving the file
     public void SaveToFile(string path)
     {
@@ -331,7 +328,6 @@ public class SaveStateService
                 "Failed to load from file: {e}", e);
         }
     }
-    #endregion
     public int GetStateCount()
     {
         return _saveStateModel is null ? 0 : _saveStateModel.SaveStates.Count;

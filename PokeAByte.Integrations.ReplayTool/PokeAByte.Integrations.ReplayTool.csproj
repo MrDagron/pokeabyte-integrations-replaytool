@@ -41,6 +41,9 @@
       <Compile Update="ReplayToolForm.EDPS.cs">
         <DependentUpon>ReplayToolForm.cs</DependentUpon>
       </Compile>
+      <Compile Update="Logic\Services\TcpServer.cs">
+        <DependentUpon>TcpServerService.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <Copy SourceFiles="$(OutputPath)$(MSBuildProjectName).dll" DestinationFolder="$(BIZHAWK_DATA_HOME)ExternalTools" />
