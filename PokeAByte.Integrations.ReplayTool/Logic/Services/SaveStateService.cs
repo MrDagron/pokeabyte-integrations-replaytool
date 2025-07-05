@@ -26,8 +26,6 @@ public class SaveStateService
     private byte[] _lastState = [];
     private (int key, byte[] frame) _lastKeyframe;
     private int _currentKey = 0;
-    //temp, allow user to choose or make it logical
-    private readonly double _keyframePercent = 0.05;
     
     private Thread _workerThread;
     private CancellationTokenSource _cancellationTokenSource;
@@ -45,6 +43,44 @@ public class SaveStateService
         _workerThread.Start();
     }
 
+    public void SaveState(int frame, 
+        byte[] state, 
+        long saveTimeMs,
+        bool isKeyframe = false,
+        bool isFlagged = false, 
+        string flagName = "")
+    {
+        //Since we want to be on a different thread, let's make sure we make a local clone
+        //of the state before we do anything else
+        if (state.Clone() is not byte[] stateBytes)
+        {
+            throw new NullReferenceException("State is null");
+        }
+        //If the _saveStateModel is not created then this should be the 
+        //very first state created
+        if (_saveStateModel == null)
+        {
+            _lastState = state;
+            _saveStateModel = new SaveStateModel
+            {
+                FirstState = stateBytes,
+                SaveStates = [],
+            };
+        }
+        _saveStateQueue.Enqueue(new SaveState
+        {
+            Key = _currentKey,
+            Frame = frame,
+            FlagName = flagName,
+            IsFlagged = isFlagged,
+            SaveTimeMs = saveTimeMs,
+            StateDelta = [],
+            FullState = stateBytes,
+            IsKeyframe = isKeyframe
+        });
+        _currentKey += 1;
+    }
+    
     private void ProcessSaveStates(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
@@ -94,44 +130,6 @@ public class SaveStateService
             //Update the last state
             _lastState = stateBytes;
         }
-    }
-    
-    public void SaveState(int frame, 
-        byte[] state, 
-        long saveTimeMs,
-        bool isKeyframe = false,
-        bool isFlagged = false, 
-        string flagName = "")
-    {
-        //Since we want to be on a different thread, let's make sure we make a local clone
-        //of the state before we do anything else
-        if (state.Clone() is not byte[] stateBytes)
-        {
-            throw new NullReferenceException("State is null");
-        }
-        //If the _saveStateModel is not created then this should be the 
-        //very first state created
-        if (_saveStateModel == null)
-        {
-            _lastState = state;
-            _saveStateModel = new SaveStateModel
-            {
-                FirstState = stateBytes,
-                SaveStates = [],
-            };
-        }
-        _saveStateQueue.Enqueue(new SaveState
-        {
-            Key = _currentKey,
-            Frame = frame,
-            FlagName = flagName,
-            IsFlagged = isFlagged,
-            SaveTimeMs = saveTimeMs,
-            StateDelta = [],
-            FullState = stateBytes,
-            IsKeyframe = isKeyframe
-        });
-        _currentKey += 1;
     }
     
     private void BuildSaveStates()
