@@ -8,7 +8,7 @@ namespace PokeAByte.Integrations.ReplayTool;
 //Events that are required for Playback functionality
 public partial class ReplayToolForm
 {
-    private bool _isPlayback = false;
+/*    private bool _isPlayback = false;
     private void UpdatePlaybackScrubberPosition()
     {
         if (_isRecording) return;
@@ -46,5 +46,5 @@ public partial class ReplayToolForm
         {
             EmulatorHelper.LoadStateBinary(PokeAByteMainForm, state);
         }
-    }
+    }*/
 }

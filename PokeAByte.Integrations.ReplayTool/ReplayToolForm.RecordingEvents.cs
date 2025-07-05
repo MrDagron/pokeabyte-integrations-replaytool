@@ -1,15 +1,14 @@
 ﻿using System;
-using System.IO;
-using System.Reflection;
-using System.Timers;
 using BizHawk.Common;
 using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
+using System.Timers;
 
 namespace PokeAByte.Integrations.ReplayTool;
 
-//Events that are required for SaveState functionality
+//Events that are required for Recording functionality
 public partial class ReplayToolForm
 {
+    private bool _isRecording = false;
     private int _saveStateTimeMs = 1000;
     private Timer _saveStateTimer;
     private bool _shouldSaveState = false;
@@ -45,5 +44,41 @@ public partial class ReplayToolForm
         }
         _saveStateTimer.Start();
         _shouldSaveState = false;
+    }
+    private void recordBtn_Click(object sender, EventArgs e)
+    {
+        if (!_isRecording)
+        {
+            recordBtn.Text = "Stop Recording";
+            _saveStateService.Reset();
+            _isRecording = true;
+            _saveStateTimer.Start();
+        }
+        else
+        {
+            recordBtn.Text = "Start Recording";
+            _isRecording = false;
+            _saveStateTimer.Stop();
+            //save file dlg
+            
+            //move to playback mode
+            _inRecordingMode = false;
+            mainFormTabs.SelectedTab = playbackTab;
+            ClientSize = new System.Drawing.Size(1255, 528);
+        }
+    }
+    private void recordingPauseEmulatorBtn_Click(object sender, EventArgs e)
+    {
+        if(PokeAByteMainForm.EmulatorPaused)
+        {
+            _saveStateTimer.Start();
+            recordingPauseEmulatorBtn.Text = "Pause Emulator";
+        }
+        else
+        {
+            _saveStateTimer.Stop();
+            recordingPauseEmulatorBtn.Text = "Resume Emulator";
+        }
+        PokeAByteMainForm.TogglePause();
     }
 }

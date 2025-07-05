@@ -14,10 +14,7 @@
     <Compile Update="ReplayToolForm.PlaybackEvents.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="ReplayToolForm.RecordEvents.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="ReplayToolForm.SaveStateEvents.cs">
+    <Compile Update="ReplayToolForm.RecordingEvents.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="UI\EditNameDialog.cs">

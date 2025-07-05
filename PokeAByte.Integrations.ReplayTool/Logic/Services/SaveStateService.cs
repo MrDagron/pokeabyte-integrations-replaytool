@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
-using System.Timers;
 using BizHawk.Common;
-using Newtonsoft.Json;
 using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 using PokeAByte.Integrations.ReplayTool.Models;
-using Timer = System.Timers.Timer;
 
 namespace PokeAByte.Integrations.ReplayTool.Logic.Services;
 //https://github.com/endel/FossilDelta/
@@ -25,22 +20,21 @@ namespace PokeAByte.Integrations.ReplayTool.Logic.Services;
  */
 public class SaveStateService
 {
+    private readonly RecordingSettings _recordingSettings;
     private SaveStateModel? _saveStateModel;
     private readonly ConcurrentQueue<SaveState> _saveStateQueue = new();
     private byte[] _lastState = [];
     private (int key, byte[] frame) _lastKeyframe;
-    private int _currentSize = 0;
-    private bool _isSaving = false;
-    private string _saveFilePath = "";
-    private bool _shouldSave = false;
+    private int _currentKey = 0;
     //temp, allow user to choose or make it logical
-    private double _keyframePercent = 0.05;
+    private readonly double _keyframePercent = 0.05;
     
     private Thread _workerThread;
     private CancellationTokenSource _cancellationTokenSource;
     
-    public SaveStateService()
+    public SaveStateService(RecordingSettings recordingSettings)
     {
+        _recordingSettings = recordingSettings;
         _cancellationTokenSource = new CancellationTokenSource();
         _workerThread = new Thread(() => 
             ProcessSaveStates(_cancellationTokenSource.Token))
@@ -70,35 +64,35 @@ public class SaveStateService
             return;
         }
         
-        if (!_saveStateQueue.TryDequeue(out var saveState))
+        while (_saveStateQueue.TryDequeue(out var saveState))
         {
-            //Todo: handle this
-            return;
-        }
-        
-        var stateBytes = saveState.FullState;
-        //get the delta between the current state and the last state
-        var delta = Fossil.Delta.Create(_lastState, stateBytes);
-        //Todo: figure out how we should handle the error
-        if (delta is null || delta.Length == 0)
-        {
-            Log.Error(nameof(SaveStateService), 
-                "Failed to get delta between states"); 
-        }
-        else
-        {
+            var stateBytes = saveState.FullState;
+            //get the delta between the current state and the last state
+            var delta = Fossil.Delta.Create(_lastState, stateBytes);
+            //Todo: figure out how we should handle the error
+            if (delta is null || delta.Length == 0)
+            {
+                throw new InvalidOperationException("Failed to get delta between states");
+            }
+
             //compress the delta further
             saveState.StateDelta = ZStdHelpers.Compress(delta);
             //clear the full state to reduce memory usage
             saveState.FullState = [];
             _saveStateModel.SaveStates.Add(saveState);
+            //Check if we should make a keyframe
+            if(saveState.Key % _recordingSettings.KeyframeIntervalCount == 0)
+            {
+                saveState.IsKeyframe = true;
+            }
+            //add to our keyframe list
             if (saveState.IsKeyframe)
             {
                 _saveStateModel.Keyframes.Add(saveState.Key);
             }
+
             //Update the last state
             _lastState = stateBytes;
-            _shouldSave = true; 
         }
     }
     
@@ -129,7 +123,7 @@ public class SaveStateService
         }
         _saveStateQueue.Enqueue(new SaveState
         {
-            Key = _currentSize,
+            Key = _currentKey,
             Frame = frame,
             FlagName = flagName,
             IsFlagged = isFlagged,
@@ -138,7 +132,7 @@ public class SaveStateService
             FullState = stateBytes,
             IsKeyframe = isKeyframe
         });
-        _currentSize += 1;
+        _currentKey += 1;
     }
     
     private void BuildSaveStates()
@@ -169,8 +163,7 @@ public class SaveStateService
         else //Otherwise let's automatically build them
         {
             var keyframeList = new List<int>();
-            var keyframeCount = (int)Math.Ceiling(_saveStateModel.SaveStates.Count * _keyframePercent);
-            var interval = Math.Max(1, _saveStateModel.SaveStates.Count / keyframeCount);
+            var count = 1;
             var lastState = _saveStateModel.FirstState;
             foreach (var saveState in _saveStateModel.SaveStates)
             {
@@ -179,13 +172,14 @@ public class SaveStateService
                 {
                     return;
                 }
-                if (saveState.Key % interval == 0)
+                if (count == _recordingSettings.KeyframeIntervalCount)
                 {
                     saveState.FullState = reconstructedState;
                     saveState.IsKeyframe = true;
                     keyframeList.Add(saveState.Key);
                 }
                 lastState = reconstructedState;
+                count += 1;
             }
             //store the keyframes for later
             _saveStateModel.Keyframes = keyframeList;
@@ -291,12 +285,6 @@ public class SaveStateService
     //Todo: probably switch to memory mapped files to save instead of constantly deleting and resaving the file
     public void SaveToFile(string path)
     {
-        if (_isSaving || !_shouldSave)
-        {
-            return;
-        }
-        _isSaving = true;
-
         try
         {
             var serializeMessage = SerializationHelper.SerializeJsonToFile(_saveStateModel, path);
@@ -313,16 +301,10 @@ public class SaveStateService
                 "Failed to save to file: {e}",
                 e);
         }
-        
-        _isSaving = false;
     }
 
     public void LoadFromFile(string path)
     {
-        if (_isSaving)
-        {
-            return;
-        }
         try
         {
             var deserialized = SerializationHelper.DeserializeJsonFromFile<SaveStateModel>(path);
@@ -354,22 +336,13 @@ public class SaveStateService
     {
         return _saveStateModel is null ? 0 : _saveStateModel.SaveStates.Count;
     }
-    //debugging helpers
-    public int GetKeyframeCount()
+    public void Reset()
     {
-        if (_saveStateModel is null)
-        {
-            return 0;
-        }
-        return _saveStateModel.SaveStates.Count(s => s.IsKeyframe);
-    }
-
-    public int GetReconstructedStatesTotal()
-    {
-        if (_saveStateModel is null)
-        {
-            return 0;
-        }
-        return _saveStateModel.SaveStates.Count(s => s.FullState.Length > 0);
+        _saveStateModel = null;
+        //clear the queue
+        while (_saveStateQueue.TryDequeue(out _)) ;
+        _lastState = [];
+        _lastKeyframe = default;
+        _currentKey = 0;
     }
 }

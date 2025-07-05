@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -11,6 +12,7 @@ using BizHawk.Common;
 using BizHawk.Emulation.Common;
 using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 using PokeAByte.Integrations.ReplayTool.Logic.Services;
+using PokeAByte.Integrations.ReplayTool.Models;
 using PokeAByte.Protocol;
 using PokeAByte.Protocol.BizHawk;
 using PokeAByte.Protocol.BizHawk.PlatformData;
@@ -26,10 +28,13 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
     private MainForm PokeAByteMainForm => (MainForm)MainForm;
     
     private readonly SaveStateService _saveStateService;
-
+    private readonly RecordingSettings _recordingSettings;
+    private bool _inRecordingMode = true;
     public ReplayToolForm()
     {
-        _saveStateService = new SaveStateService();
+        //todo: read from settings files
+        _recordingSettings = new RecordingSettings();
+        _saveStateService = new SaveStateService(_recordingSettings);
         ConfigureSaveStateTimer();
         
         Closing += (_, _) =>
@@ -38,7 +43,17 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         };
         
         InitializeComponent();
-        
+        ClientSize = new Size(868, 96);
+        mainFormTabs.ItemSize = new Size(0, 1);
+        //remove tab bar
+        /*mainFormTabs.Top -= mainFormTabs.ItemSize.Height;
+        mainFormTabs.Height += mainFormTabs.ItemSize.Height;
+        mainFormTabs.Region = new Region(
+            new RectangleF(
+                recordingTab.Left,
+                recordingTab.Top, 
+                recordingTab.Width,
+                recordingTab.Height + mainFormTabs.ItemSize.Height));*/
         StartServer();
     }
 
@@ -46,12 +61,8 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         // executed once after the constructor, and again every time a rom is loaded or reloaded
         EDPSRestart();
     }
-    //tmp remove
-    private int fpsSum = 0;
-    private int fpsAvg = 0;
-    private int count = 0;
-    private int low = 1000;
-    private int high = 0;
+
+    private int test = 0;
     protected override void UpdateAfter() {
         // executed after every frame (except while turboing, use FastUpdateAfter for that)
         SaveState();
@@ -59,29 +70,13 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         {   
             this._processor?.Update(this.MemoryDomains);
         }
-
-        count++;
-        fpsSum += PokeAByteMainForm.GetApproxFramerate();
-        fpsAvg = fpsSum / count;
-        if (fpsAvg > high)
-        {
-            high = fpsAvg;
-        }
-
-        if (fpsAvg < low)
-        {
-            low = fpsAvg;
-        }
-        fpsLabel.Text = $"FPS - Avg: {fpsAvg}, Low: {low}, High: {high}, Count: {count}";
     }
     //Temp, remove
     private void doStuffBtn_Click(object sender, EventArgs e)
     {
-        count = 0;
-        fpsAvg = 0;
-        fpsSum = 0;
-        low = 1000;
-        high = 0;
+        /*_fpsCounter = 0;
+        _fpsSum = 0;
+        _fpsAvg = 0;*/
         /*if (_isRecording)
         {
             _isRecording = false;
@@ -126,4 +121,5 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         PokeAByteMainForm.InvisibleEmulation = false;
         PokeAByteMainForm.UnpauseEmulator();*/
     }
+
 }

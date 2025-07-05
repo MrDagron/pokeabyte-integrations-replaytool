@@ -35,7 +35,7 @@
       <Compile Update="ReplayToolForm.PlaybackEvents.cs">
         <DependentUpon>ReplayToolForm.cs</DependentUpon>
       </Compile>
-      <Compile Update="ReplayToolForm.RecordEvents.cs">
+      <Compile Update="ReplayToolForm.RecordingEvents.cs">
         <DependentUpon>ReplayToolForm.cs</DependentUpon>
       </Compile>
       <Compile Update="ReplayToolForm.EDPS.cs">
