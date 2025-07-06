@@ -72,13 +72,13 @@ public partial class ReplayToolForm
             _saveStateTimer.Stop();
             _replayManager.StopRecording();
             //todo: remove and addsave file dlg
-            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            /*string assemblyLocation = Assembly.GetExecutingAssembly().Location;
             string assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
             if (!string.IsNullOrWhiteSpace(assemblyDirectory))
             {
                 assemblyDirectory = assemblyDirectory.Substring(0, assemblyDirectory.LastIndexOf('\\'));
             }
-            _replayManager.SaveToFile(assemblyDirectory + "\\replay.json");;
+            _replayManager.SaveToFile(assemblyDirectory + "\\replay.json");;*/
             
             //move to playback mode
             _inRecordingMode = false;
