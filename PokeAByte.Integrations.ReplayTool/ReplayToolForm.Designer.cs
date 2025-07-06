@@ -252,6 +252,7 @@ public partial class ReplayToolForm
             this.playbackScrubber.Size = new System.Drawing.Size(838, 27);
             this.playbackScrubber.TabIndex = 0;
             this.playbackScrubber.Text = "timeScrubber1";
+            this.playbackScrubber.PositionChanged += OnScrubberPositionChanged;
             // 
             // playbackBtn
             // 

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
 using BizHawk.Common;
 using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 using System.Timers;
@@ -24,6 +26,8 @@ public partial class ReplayToolForm
         _shouldSaveState = true;
     }
 
+    //todo: tmp
+    private int _saveCount = 0;
     private void SaveState(bool isFlagged = false, string flagName = "")
     {
         if (!_isRecording || !_shouldSaveState)
@@ -44,6 +48,12 @@ public partial class ReplayToolForm
         }
         _saveStateTimer.Start();
         _shouldSaveState = false;
+        
+        //todo: tmp
+        _saveCount++;
+        var recordingTime = _saveCount * _saveStateTimeMs;
+        var timeSpan = TimeSpan.FromMilliseconds(recordingTime);
+        recordingTimeLabel.Text = $"{(int)timeSpan.TotalHours:00}:{timeSpan.Minutes:00}:{timeSpan.Seconds:00}";
     }
     private void recordBtn_Click(object sender, EventArgs e)
     {
@@ -52,6 +62,7 @@ public partial class ReplayToolForm
             recordBtn.Text = "Stop Recording";
             _replayManager.Reset();
             _isRecording = true;
+            _replayManager.StartRecording();
             _saveStateTimer.Start();
         }
         else
@@ -59,7 +70,15 @@ public partial class ReplayToolForm
             recordBtn.Text = "Start Recording";
             _isRecording = false;
             _saveStateTimer.Stop();
-            //save file dlg
+            _replayManager.StopRecording();
+            //todo: remove and addsave file dlg
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            string assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
+            if (!string.IsNullOrWhiteSpace(assemblyDirectory))
+            {
+                assemblyDirectory = assemblyDirectory.Substring(0, assemblyDirectory.LastIndexOf('\\'));
+            }
+            _replayManager.SaveToFile(assemblyDirectory + "\\replay.json");;
             
             //move to playback mode
             _inRecordingMode = false;

@@ -8,11 +8,11 @@ namespace PokeAByte.Integrations.ReplayTool;
 //Events that are required for Playback functionality
 public partial class ReplayToolForm
 {
-/*    private bool _isPlayback = false;
+    private bool _isPlayback = false;
     private void UpdatePlaybackScrubberPosition()
     {
         if (_isRecording) return;
-        if (_isPlayback && !timeScrubber.IsMouseDown)
+        if (_isPlayback && !playbackScrubber.IsMouseDown)
         {
             //get current frame
             var frame = PokeAByteMainForm.Emulator.Frame;
@@ -24,27 +24,27 @@ public partial class ReplayToolForm
     }
     private void OnScrubberPositionChanged(object sender, PositionChangedEventArgs e)
     {
-        if (_isRecording || !_isPlayback)
+        if (_isRecording)
         {
             return;
         }
 
-        var stateCount = _saveStateService.GetStateCount();
+        var stateCount = _replayManager.GetFrameCount();
         if (stateCount == 0)
         {
             return;
         }
 
-        var index = timeScrubber.GetIndex(stateCount);
+        var index = playbackScrubber.GetIndex(stateCount);
         if (index >= stateCount)
         {
             return;
         }
         
-        var state = _saveStateService.GetReconstructedState(index);
+        var state = _replayManager.GetReconstructedState(index);
         if (state is not null)
         {
             EmulatorHelper.LoadStateBinary(PokeAByteMainForm, state);
         }
-    }*/
+    }
 }

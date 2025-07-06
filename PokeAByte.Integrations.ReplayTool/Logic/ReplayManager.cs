@@ -46,12 +46,9 @@ public sealed class ReplayManager
         }
         _recordingManager.Reset();
         _cancellationTokenSource = new CancellationTokenSource();
-        _workerThread = new Thread(() => 
-            ProcessSaveStates(_cancellationTokenSource.Token))
-        {
-            IsBackground = true,
-            Name = "ProcessSaveStateQueueThread"
-        };
+        _workerThread = new Thread(ProcessSaveStates);
+        _workerThread.IsBackground = true;
+        _workerThread.Name = "ProcessSaveStateQueueThread";
         _workerThread.Start();
         _isRecording = true;
     }
@@ -94,8 +91,9 @@ public sealed class ReplayManager
             IsKeyframe = isKeyframe
         });
     }
-    private void ProcessSaveStates(CancellationToken token)
+    private void ProcessSaveStates()
     {
+        CancellationToken token = _cancellationTokenSource.Token;
         while (!token.IsCancellationRequested)
         {
             while (_saveStateQueue.TryDequeue(out var saveState))
@@ -164,5 +162,35 @@ public sealed class ReplayManager
         _recordingManager.Reset();
         //clear the queue
         while (_saveStateQueue.TryDequeue(out _)) ;
+    }
+
+    public int GetFrameCount()
+    {
+        return _playbackManager.GetPlaybackStateCount();
+    }
+
+    public byte[] GetReconstructedState(int index)
+    {
+        return _playbackManager.GetReconstructedState(index);
+    }
+    
+    public void SaveToFile(string path)
+    {
+        try
+        {
+            var serializeMessage = SerializationHelper.SerializeJsonToFile(_recordingManager.SaveAsReplayFile(), path);
+            if (!string.IsNullOrEmpty(serializeMessage))
+            {
+                Log.Error(nameof(ReplayManager), 
+                    "Failed to save to file: {serializeMessage}", 
+                    serializeMessage);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(nameof(ReplayManager), 
+                "Failed to save to file: {e}",
+                e);
+        }
     }
 }

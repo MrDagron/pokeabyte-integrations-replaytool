@@ -8,28 +8,23 @@ namespace PokeAByte.Integrations.ReplayTool.Logic;
 
 public sealed class Playback
 {
-    private List<PlaybackState> _playbackStates = [];
+    private PlaybackState[] _playbackStates = [];
     private Keyframe? _lastKeyframe = null;
     
     public void SetPlaybackStates(PlaybackState[] playbackStates)
     {
-        _playbackStates = new List<PlaybackState>(playbackStates);
+        _playbackStates = playbackStates;
     }
     
-    public byte[] GetReconstructedState(int frame)
+    public byte[] GetReconstructedState(int key)
     {
         //todo: better handling 
-        if (_playbackStates.Count == 0 || frame < 0)
+        if (_playbackStates.Length == 0 || key < 0 || key >= _playbackStates.Length)
         {
             return [];
         }
         //find the frame we want
-        var saveState = _playbackStates.FirstOrDefault(p => p.Frame == frame);
-        //Todo: better handling
-        if (saveState is null)
-        {
-            return [];
-        }
+        var saveState = _playbackStates[key];/*_playbackStates.FirstOrDefault(p => p.Frame == frame);*/
 
         if (saveState.IsKeyframe)
         {
@@ -38,11 +33,11 @@ public sealed class Playback
         }
         
         var lastKeyframeState = _playbackStates
-            .LastOrDefault(s => s.IsKeyframe && s.Frame <= frame);
+            .LastOrDefault(s => s.IsKeyframe && s.Frame <= saveState.Frame);
         //We shouldn't hit this because we are always setting the first state to be a keyframe but lets be safe
         if (lastKeyframeState is null)
         {
-            throw new InvalidOperationException($"Failed to find last keyframe for key {frame}");
+            throw new InvalidOperationException($"Failed to find last keyframe for key {saveState.Frame}");
         }
 
         var lastKeyframe = new Keyframe
@@ -57,11 +52,11 @@ public sealed class Playback
         {
             lastKeyframe = _lastKeyframe;
         }
-        var reconstructedState = ReconstructToFrame(frame, lastKeyframe);
+        var reconstructedState = ReconstructToFrame(saveState.Frame, lastKeyframe);
         //cache the last keyframe
         _lastKeyframe = new Keyframe
         {
-            Frame = frame,
+            Frame = saveState.Frame,
             SaveState = reconstructedState
         };
         return reconstructedState;
@@ -100,4 +95,6 @@ public sealed class Playback
         }
         return reconstructedState;
     }
+
+    public int GetPlaybackStateCount() => _playbackStates.Length;
 }

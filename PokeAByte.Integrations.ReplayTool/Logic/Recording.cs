@@ -79,4 +79,14 @@ public sealed class Recording
         _lastState = [];
         _keyframes = [];
     }
+    
+    public ReplayFile SaveAsReplayFile()
+    {
+        return new ReplayFile
+        {
+            FirstState = _firstState,
+            States = _recordedSaveStates,
+            Keyframes = _keyframes
+        };
+    }
 }
