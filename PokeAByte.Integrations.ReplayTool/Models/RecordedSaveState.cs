@@ -4,17 +4,8 @@ using Newtonsoft.Json;
 
 namespace PokeAByte.Integrations.ReplayTool.Models;
 
-public record SaveStateModel
+public sealed class RecordedSaveState : IComparable<RecordedSaveState>
 {
-    public byte[] FirstState { get; set; } = [];
-    [JsonIgnore] public bool HasBeenReconstructed { get; set; } = false;
-    public List<SaveState> SaveStates { get; set; } = [];
-    public List<int> Keyframes { get; set; } = [];
-}
-
-public record SaveState : IComparable<SaveState>
-{
-    public int Key { get; set; }
     public int Frame { get; set; }
     public bool IsFlagged { get; set; } = false;
     public string FlagName { get; set; } = "";
@@ -24,12 +15,12 @@ public record SaveState : IComparable<SaveState>
     public bool IsKeyframe { get; set; }
 
     public override string ToString() => !string.IsNullOrWhiteSpace(FlagName) ? 
-        $"#{Key} - Frame #{Frame} - {FlagName}" : 
-        $"#{Key} - Frame #{Frame}";
+        $"Frame #{Frame} - {FlagName}" : 
+        $"Frame #{Frame}";
 
-    public int CompareTo(SaveState? other)
+    public int CompareTo(RecordedSaveState? other)
     {
         if (ReferenceEquals(this, other)) return 0;
-        return other is null ? 1 : Key.CompareTo(other.Key);
+        return other is null ? 1 : Frame.CompareTo(other.Frame);
     }
 }

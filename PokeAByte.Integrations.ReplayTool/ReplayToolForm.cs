@@ -3,7 +3,7 @@ using System.Drawing;
 using BizHawk.Client.Common;
 using BizHawk.Client.EmuHawk;
 using BizHawk.Common;
-using PokeAByte.Integrations.ReplayTool.Logic.Services;
+using PokeAByte.Integrations.ReplayTool.Logic;
 using PokeAByte.Integrations.ReplayTool.Models;
 
 namespace PokeAByte.Integrations.ReplayTool;
@@ -16,15 +16,15 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
     
     private MainForm PokeAByteMainForm => (MainForm)MainForm;
     
-    private readonly SaveStateService _saveStateService;
-    private readonly TcpServerService _tcpServerService;
+    private readonly ReplayManager _replayManager;
+    private readonly TcpServer _tcpServer;
     private readonly RecordingSettings _recordingSettings;
     private bool _inRecordingMode = true;
     public ReplayToolForm()
     {
         //todo: read from settings files
         _recordingSettings = new RecordingSettings();
-        _saveStateService = new SaveStateService(_recordingSettings);
+        _replayManager = new ReplayManager(_recordingSettings);
         ConfigureSaveStateTimer();
         
         Closing += (_, _) =>
@@ -46,13 +46,13 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
                 recordingTab.Height + mainFormTabs.ItemSize.Height));*/
         StartServer();
         //todo: connection settings?
-        _tcpServerService = new TcpServerService
+        _tcpServer = new TcpServer
         {
             OnMessageReceived = OnTcpServerMessage,
             OnConnected = OnTcpServerConnected,
             OnDisconnected = OnTcpServerDisconnected
         };
-        _tcpServerService.Start();
+        _tcpServer.StartServer();
     }
 
     public override void Restart() {

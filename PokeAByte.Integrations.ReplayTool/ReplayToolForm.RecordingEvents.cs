@@ -40,7 +40,7 @@ public partial class ReplayToolForm
         else
         {
             //todo: get timer for `saveTimeMs`
-            _saveStateService.SaveState(savestate.Frame, savestate.SaveState, 0, false, isFlagged, flagName);
+            _replayManager.SaveState(savestate.Frame, savestate.SaveState, 0, false, isFlagged, flagName);
         }
         _saveStateTimer.Start();
         _shouldSaveState = false;
@@ -50,7 +50,7 @@ public partial class ReplayToolForm
         if (!_isRecording)
         {
             recordBtn.Text = "Stop Recording";
-            _saveStateService.Reset();
+            _replayManager.Reset();
             _isRecording = true;
             _saveStateTimer.Start();
         }

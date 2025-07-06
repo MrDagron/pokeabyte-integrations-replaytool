@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokeAByte.Integrations.ReplayTool", "PokeAByte.Integrations.ReplayTool\PokeAByte.Integrations.ReplayTool.csproj", "{FB158219-9520-4B35-9A38-B3920B4D803F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{4593DAB3-2275-4D73-B9B6-8DE736198DB6}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,9 +12,5 @@ Global
 		{FB158219-9520-4B35-9A38-B3920B4D803F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB158219-9520-4B35-9A38-B3920B4D803F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB158219-9520-4B35-9A38-B3920B4D803F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4593DAB3-2275-4D73-B9B6-8DE736198DB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4593DAB3-2275-4D73-B9B6-8DE736198DB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4593DAB3-2275-4D73-B9B6-8DE736198DB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4593DAB3-2275-4D73-B9B6-8DE736198DB6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
