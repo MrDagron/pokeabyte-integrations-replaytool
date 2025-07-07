@@ -20,16 +20,18 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
     private readonly TcpServer _tcpServer;
     private readonly RecordingSettings _recordingSettings;
     private bool _inRecordingMode = true;
+    public bool IsActive { get; private set; } = true;
     public ReplayToolForm()
     {
         //todo: read from settings files
         _recordingSettings = new RecordingSettings();
         _replayManager = new ReplayManager(_recordingSettings);
         ConfigureSaveStateTimer();
-        
+
         Closing += (_, _) =>
         {
             Cleanup();
+            IsActive = false;
         };
         
         InitializeComponent();

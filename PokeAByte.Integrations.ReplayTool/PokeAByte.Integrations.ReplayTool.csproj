@@ -4,6 +4,7 @@
         <Nullable>enable</Nullable>
         <TargetFramework>net48</TargetFramework>
         <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(BIZHAWK_HOME)' == '' ">
         <BIZHAWK_HOME>$(ProjectDir)../BizHawk/</BIZHAWK_HOME><!-- if building EmuHawk from source, point to e.g. `$(ProjectDir)../BizHawk/output/` -->

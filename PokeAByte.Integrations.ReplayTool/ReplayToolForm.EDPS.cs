@@ -25,6 +25,7 @@ public partial class ReplayToolForm
         _server.OnSetup = Setup;
         _server.Start();
     }
+
     private void Cleanup()
     {
         EDPSLabel.Text = $"Waiting for Client...";
@@ -33,6 +34,7 @@ public partial class ReplayToolForm
         _processor?.Dispose();
         _processor = null;
     }
+
     private void Setup(SetupInstruction instruction)
     {
         var gameInfo = APIs?.Emulation.GetGameInfo();
