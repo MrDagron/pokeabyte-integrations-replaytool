@@ -37,6 +37,11 @@ public partial class ReplayToolForm
 
     private void Setup(SetupInstruction instruction)
     {
+        if (_processor != null)
+        {
+            _processor.Dispose();
+            _processor = null;
+        }
         var gameInfo = APIs?.Emulation.GetGameInfo();
         var system = gameInfo?.System ?? string.Empty;
         var platform = PlatformConstants.Platforms.SingleOrDefault(x => x.SystemId == system);

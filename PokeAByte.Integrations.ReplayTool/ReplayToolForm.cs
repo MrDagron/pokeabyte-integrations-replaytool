@@ -34,7 +34,7 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         ClientSize = new Size(868, 96);
         mainFormTabs.ItemSize = new Size(0, 1);
 
-        StartServer();
+        //StartServer();
         
         //todo: connection settings?
         _tcpServer = new TcpServer
