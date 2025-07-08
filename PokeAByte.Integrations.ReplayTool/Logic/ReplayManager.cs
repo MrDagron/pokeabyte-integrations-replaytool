@@ -9,15 +9,8 @@ using PokeAByte.Integrations.ReplayTool.Models;
 
 namespace PokeAByte.Integrations.ReplayTool.Logic;
 //https://github.com/endel/FossilDelta/
-/*
- * TODO:
- * AddSaveRange (*)
- * UpdateSave
- * DeleteSave
- *
- * (*) Need to think about if I want to include these here since they require the MainForm or if I want to
- * further decouple this service from the GUI layer
- */
+
+public delegate void OnStateAdded(string stateName);
 public sealed class ReplayManager
 {
     private readonly RecordingSettings _recordingSettings;
@@ -30,6 +23,8 @@ public sealed class ReplayManager
     
     private bool _isRecording = false;
     private bool _isPlayback = false;
+    
+    public OnStateAdded? StateAdded { get; set; }
     
     public ReplayManager(RecordingSettings recordingSettings)
     {
@@ -58,7 +53,9 @@ public sealed class ReplayManager
         _workerThread.Join();
         _recordingManager.Complete();
         _isRecording = false;
-        _playbackManager.SetPlaybackStates(_recordingManager.GetAsPlaybackStateArray());
+        var playbackStates = _recordingManager.GetAsPlaybackStateArray();
+        Log.Error("", $"Playback states count: {playbackStates.Length}");;
+        _playbackManager.SetPlaybackStates(playbackStates);
     }
     
     public void SaveState(int frame, 
@@ -98,7 +95,7 @@ public sealed class ReplayManager
         {
             while (_saveStateQueue.TryDequeue(out var saveState))
             {
-                _recordingManager.Add(saveState, _recordingSettings.KeyframeIntervalCount);
+                StateAdded?.Invoke(_recordingManager.Add(saveState, _recordingSettings.KeyframeIntervalCount));
             }
             Thread.Sleep(20);
         }
@@ -171,6 +168,7 @@ public sealed class ReplayManager
 
     public byte[] GetReconstructedState(int index)
     {
+        Log.Error("", $"Getting state at index: {index}");
         return _playbackManager.GetReconstructedState(index);
     }
     

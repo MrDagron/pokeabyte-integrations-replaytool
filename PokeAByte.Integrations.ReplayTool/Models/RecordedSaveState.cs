@@ -14,10 +14,22 @@ public sealed class RecordedSaveState : IComparable<RecordedSaveState>
     [JsonIgnore] public byte[] FullState { get; set; } = [];
     public bool IsKeyframe { get; set; }
 
-    public override string ToString() => !string.IsNullOrWhiteSpace(FlagName) ? 
+    /*public override string ToString() => !string.IsNullOrWhiteSpace(FlagName) ? 
         $"Frame #{Frame} - {FlagName}" : 
-        $"Frame #{Frame}";
-
+        $"Frame #{Frame}";*/
+    public override string ToString()
+    {
+        var frameName = $"Frame #{Frame}";
+        if (!string.IsNullOrWhiteSpace(FlagName))
+        {
+            frameName += $" - {FlagName}";
+        }
+        if (IsKeyframe)
+        {
+            frameName += " (Keyframe)";       
+        }
+        return frameName;
+    }
     public int CompareTo(RecordedSaveState? other)
     {
         if (ReferenceEquals(this, other)) return 0;

@@ -26,6 +26,8 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         //todo: read from settings files
         _recordingSettings = new RecordingSettings();
         _replayManager = new ReplayManager(_recordingSettings);
+        _replayManager.StateAdded += OnStateAddedHandler;
+        
         ConfigureSaveStateTimer();
         
         InitializeComponent();

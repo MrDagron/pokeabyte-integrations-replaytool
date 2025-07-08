@@ -20,10 +20,9 @@ public sealed class Recording
         _lastState = state;
     }
     
-    public void Add(RecordedSaveState state, int keyframeInterval)
+    public string Add(RecordedSaveState state, int keyframeInterval)
     {
         var stateBytes = state.FullState;
-           
         var delta = Fossil.Delta.Create(_lastState, stateBytes);            
         //Todo: figure out how we should handle the error
         if (delta is null || delta.Length == 0)
@@ -31,9 +30,14 @@ public sealed class Recording
             throw new InvalidOperationException("Failed to get delta between states");
         }
         //compress the delta further
-        state.StateDelta = ZStdHelpers.Compress(delta);        
+        state.StateDelta = ZStdHelpers.Compress(delta);
+        if (state.StateDelta.Length == 0)
+        {
+            throw new InvalidOperationException("Failed to compress delta");       
+        }
+        _recordedSaveStates.Add(state);       
         //Check if we should create a keyframe. We should force the first state to be a keyframe
-        if (state.Frame % keyframeInterval == 0 || _recordedSaveStates.Count == 0)
+        if (_recordedSaveStates.Count % keyframeInterval == 0 || _recordedSaveStates.Count == 1)
         {
             state.IsKeyframe = true;
             _keyframes.Add(state.Frame);
@@ -43,8 +47,8 @@ public sealed class Recording
             //clear the full state to reduce memory usage
             state.FullState = [];
         }
-        _recordedSaveStates.Add(state);
         _lastState = stateBytes;
+        return $"State #{_recordedSaveStates.Count} - {state}";
     }
 
     public void Complete()

@@ -100,4 +100,9 @@ public partial class ReplayToolForm
         }
         PokeAByteMainForm.TogglePause();
     }
+
+    private void OnStateAddedHandler(string stateName)
+    {
+        Log.Error("", $"State added: {stateName}");
+    }
 }
