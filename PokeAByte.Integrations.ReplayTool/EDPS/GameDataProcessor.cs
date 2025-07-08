@@ -21,6 +21,7 @@ internal class GameDataProcessor : IDisposable
     private int _frameSkip;
     private int _skippedFrames;
     private MemoryMappedFile _memoryMappedFile;
+    private CancellationTokenSource _threadCancellation;
 
     private byte[] DataBuffer { get; } = new byte[4 * 1024 * 1024];
     private Thread _backgroundCopy;
@@ -35,7 +36,8 @@ internal class GameDataProcessor : IDisposable
     {
         _mainLabel = mainLabel;
         _platform = platform;
-
+        _threadCancellation = new();
+        
         int totalSize = 0;
         var blocks = new ReadBlock[setup.BlockCount];
         _readInstructions = new DomainReadInstruction[blocks.Length];
@@ -84,7 +86,7 @@ internal class GameDataProcessor : IDisposable
 
     private void CopyData()
     {
-        while (true)
+        while (!_threadCancellation.Token.IsCancellationRequested)
         {
 
             SpinWait.SpinUntil(() => _copyReady);
@@ -194,9 +196,10 @@ internal class GameDataProcessor : IDisposable
 
     public void Dispose()
     {
-        _backgroundCopy.Abort();
-        this._dataAccessor.Dispose();
-        this._memoryMappedFile.Dispose();
+        _threadCancellation.Cancel();
+        _threadCancellation.Dispose();
+        _dataAccessor.Dispose();
+        _memoryMappedFile.Dispose();
         if (File.Exists($"/dev/shm/{SharedConstants.MemoryMappedFileName}"))
         {
             File.Delete($"/dev/shm/{SharedConstants.MemoryMappedFileName}");
