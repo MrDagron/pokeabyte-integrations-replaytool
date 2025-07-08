@@ -26,7 +26,7 @@ public partial class ReplayToolForm
         _server.Start();
     }
 
-    private void Cleanup()
+    private void EDPSCleanup()
     {
         EDPSLabel.Text = $"Waiting for Client...";
         _server?.Dispose();
@@ -77,7 +77,7 @@ public partial class ReplayToolForm
             : null;
         if (gameIdentifier != this._initializedGame)
         {
-            Cleanup();
+            EDPSCleanup();
             StartServer();
             EDPSLabel.Text = gameInfo == null
                 ? "No game is loaded, doing nothing."

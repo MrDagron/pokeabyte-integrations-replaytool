@@ -27,26 +27,13 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         _recordingSettings = new RecordingSettings();
         _replayManager = new ReplayManager(_recordingSettings);
         ConfigureSaveStateTimer();
-
-        Closing += (_, _) =>
-        {
-            Cleanup();
-            IsActive = false;
-        };
         
         InitializeComponent();
         ClientSize = new Size(868, 96);
         mainFormTabs.ItemSize = new Size(0, 1);
-        //remove tab bar
-        /*mainFormTabs.Top -= mainFormTabs.ItemSize.Height;
-        mainFormTabs.Height += mainFormTabs.ItemSize.Height;
-        mainFormTabs.Region = new Region(
-            new RectangleF(
-                recordingTab.Left,
-                recordingTab.Top, 
-                recordingTab.Width,
-                recordingTab.Height + mainFormTabs.ItemSize.Height));*/
+
         StartServer();
+        
         //todo: connection settings?
         _tcpServer = new TcpServer
         {
@@ -136,4 +123,15 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         PokeAByteMainForm.UnpauseEmulator();*/
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            EDPSCleanup();
+            IsActive = false;
+            _tcpServer.StopServer();
+            //todo: kill replay manager
+        }
+        base.Dispose(disposing);
+    }
 }
