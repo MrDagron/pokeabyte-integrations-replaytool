@@ -65,14 +65,7 @@ public partial class ReplayToolForm
 
     private void WriteToMemory(WriteInstruction instruction)
     {
-        if (instruction.Data.Length != 0 && APIs != null)
-        {
-            try
-            {
-                APIs.Memory.WriteByteRange(instruction.Address, instruction.Data);
-            }
-            catch (Exception) { } // Nothing to do, fail silently.
-        }
+        this._processor?.WriteToMemory(instruction, this.MemoryDomains);
     }
     private void EDPSRestart()
     {
