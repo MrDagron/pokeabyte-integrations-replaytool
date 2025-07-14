@@ -90,7 +90,7 @@ public sealed class ReplayManager
     }
     private void ProcessSaveStates()
     {
-        CancellationToken token = _cancellationTokenSource.Token;
+        var token = _cancellationTokenSource.Token;
         while (!token.IsCancellationRequested)
         {
             while (_saveStateQueue.TryDequeue(out var saveState))
@@ -100,60 +100,6 @@ public sealed class ReplayManager
             Thread.Sleep(20);
         }
     }
-    
-    //Todo: probably switch to memory mapped files to save instead of constantly deleting and resaving the file
-    /*public void SaveToFile(string path)
-    {
-        try
-        {
-            var serializeMessage = SerializationHelper.SerializeJsonToFile(_saveStateModel, path);
-            if (!string.IsNullOrEmpty(serializeMessage))
-            {
-                Log.Error(nameof(ReplayManager), 
-                    "Failed to save to file: {serializeMessage}", 
-                    serializeMessage);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error(nameof(ReplayManager), 
-                "Failed to save to file: {e}",
-                e);
-        }
-    }
-
-    public void LoadFromFile(string path)
-    {
-        try
-        {
-            var deserialized = SerializationHelper.DeserializeJsonFromFile<SaveStates>(path);
-            if (!string.IsNullOrEmpty(deserialized.Message))
-            {
-                Log.Error(nameof(ReplayManager), 
-                    "Failed to load from file: {deserialized.Message}", 
-                    deserialized.Message);
-            }
-            else if (deserialized.Data is null)
-            {
-                Log.Error(nameof(ReplayManager), 
-                    "Failed to load from file: deserialized.Data is null");
-            }
-            else
-            {
-                _saveStateModel = deserialized.Data;
-                BuildSaveStates();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error(nameof(ReplayManager), 
-                "Failed to load from file: {e}", e);
-        }
-    }
-    public int GetStateCount()
-    {
-        return _saveStateModel is null ? 0 : _saveStateModel.States.Count;
-    }*/
     public void Reset()
     {
         _recordingManager.Reset();
