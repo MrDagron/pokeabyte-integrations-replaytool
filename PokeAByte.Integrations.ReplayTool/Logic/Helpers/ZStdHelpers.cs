@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.IO.Compression;
 using ZstdSharp;
 
 namespace PokeAByte.Integrations.ReplayTool.Logic.Helpers;
@@ -10,7 +11,6 @@ public static class ZStdHelpers
         using var compressor = new Compressor(3);
         return compressor.Wrap(input).ToArray();
     }
-
     public static void Compress(string inputFile, string outputFile)
     {
         using var input = File.OpenRead(inputFile);

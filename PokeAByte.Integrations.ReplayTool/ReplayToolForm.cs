@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
+using System.Reflection;
 using BizHawk.Client.Common;
 using BizHawk.Client.EmuHawk;
 using BizHawk.Common;
@@ -21,6 +23,7 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
     private readonly RecordingSettings _recordingSettings;
     private bool _inRecordingMode = true;
     public bool IsActive { get; private set; } = true;
+    private readonly string _assemblyDirectory; 
     public ReplayToolForm()
     {
         //todo: read from settings files
@@ -44,6 +47,12 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
             OnDisconnected = OnTcpServerDisconnected
         };
         _tcpServer.StartServer();
+        
+        var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+        var assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
+        _assemblyDirectory = !string.IsNullOrWhiteSpace(assemblyDirectory) ? 
+            assemblyDirectory[..assemblyDirectory.LastIndexOf('\\')] : 
+            "";
     }
 
     public override void Restart() {

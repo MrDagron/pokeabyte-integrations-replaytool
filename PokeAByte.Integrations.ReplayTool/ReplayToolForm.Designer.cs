@@ -78,6 +78,7 @@ public partial class ReplayToolForm
             this.loadReplayToolStripMenuItem.Name = "loadReplayToolStripMenuItem";
             this.loadReplayToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
             this.loadReplayToolStripMenuItem.Text = "Open Replay";
+            this.loadReplayToolStripMenuItem.Click += LoadReplay_OnClick;
             // 
             // saveReplayToolStripMenuItem
             // 

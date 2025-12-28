@@ -88,7 +88,7 @@ public sealed class Recording
     {
         return new ReplayFile
         {
-            FirstState = _firstState,
+            FirstState = ZStdHelpers.Compress(_firstState),
             States = _recordedSaveStates,
             Keyframes = _keyframes
         };

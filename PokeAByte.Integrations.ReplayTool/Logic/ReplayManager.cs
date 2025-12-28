@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.IO.Compression;
 using System.Threading;
 using BizHawk.Common;
 using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
@@ -118,17 +118,34 @@ public sealed class ReplayManager
         return _playbackManager.GetReconstructedState(index);
     }
     
-    public void SaveToFile(string path)
+    public void SaveToFile(string path, string replayName)
     {
         try
         {
-            var serializeMessage = SerializationHelper.SerializeJsonToFile(_recordingManager.SaveAsReplayFile(), path);
+            var serializeMessage = SerializationHelper.SerializeJsonToFile(_recordingManager.SaveAsReplayFile(), $"{path}//{replayName}.json");
             if (!string.IsNullOrEmpty(serializeMessage))
             {
                 Log.Error(nameof(ReplayManager), 
                     "Failed to save to file: {serializeMessage}", 
                     serializeMessage);
             }
+            
+            //Make a new directory to store these files
+            var tmpDir = $"{path}//{replayName}_tmp";
+            if (!Directory.Exists(tmpDir))
+            {
+                Directory.CreateDirectory(tmpDir);
+            }
+            else
+            {
+                Log.Error(nameof(ReplayManager), "Failed to save replay to file: Directory already exists");
+                return;
+            }
+            //move replay file and movie file into new dir
+            File.Move($"{path}//{replayName}.json", $"{tmpDir}//{replayName}.json");
+            File.Move($"{path}//{replayName}.bk2", $"{tmpDir}//{replayName}.bk2");
+            ZipFile.CreateFromDirectory(tmpDir, $"{path}//{replayName}.stpreplay");
+            Directory.Delete(tmpDir, true);
         }
         catch (Exception e)
         {

@@ -69,9 +69,10 @@ public static class BizHawkMovie
         }
     }
 
-    public static void PlayMovie(MainForm form, string moviePath)
+    public static void PlayMovie(MainForm form, string moviePath, string movieName)
     {
-        var movie = form.MovieSession.Get(moviePath, true);
+        var path = $"{moviePath}//{movieName}.bk2";
+        var movie = form.MovieSession.Get(path, true);
         movie.StartsFromSavestate = true;
         movie.StartNewPlayback();
     }

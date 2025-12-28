@@ -4,6 +4,7 @@ using System.Reflection;
 using BizHawk.Common;
 using PokeAByte.Integrations.ReplayTool.Logic.Helpers;
 using System.Timers;
+using PokeAByte.Integrations.ReplayTool.Logic;
 
 namespace PokeAByte.Integrations.ReplayTool;
 
@@ -63,22 +64,21 @@ public partial class ReplayToolForm
             _replayManager.Reset();
             _isRecording = true;
             _replayManager.StartRecording();
+            BizHawkMovie.StartNewMovie(PokeAByteMainForm, _assemblyDirectory, "replay");
             _saveStateTimer.Start();
         }
         else
         {
             recordBtn.Text = "Start Recording";
             _isRecording = false;
+            BizHawkMovie.StopMovie(PokeAByteMainForm);
             _saveStateTimer.Stop();
             _replayManager.StopRecording();
+            
             //todo: remove and addsave file dlg
-            /*string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-            string assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
-            if (!string.IsNullOrWhiteSpace(assemblyDirectory))
-            {
-                assemblyDirectory = assemblyDirectory.Substring(0, assemblyDirectory.LastIndexOf('\\'));
-            }
-            _replayManager.SaveToFile(assemblyDirectory + "\\replay.json");;*/
+            BizHawkMovie.PlayMovie(PokeAByteMainForm, _assemblyDirectory, "replay");
+            PokeAByteMainForm.PauseEmulator();
+            _replayManager.SaveToFile(_assemblyDirectory, "replay");
             
             //move to playback mode
             _inRecordingMode = false;
