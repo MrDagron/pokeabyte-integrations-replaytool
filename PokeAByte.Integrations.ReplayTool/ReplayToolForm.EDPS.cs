@@ -18,11 +18,19 @@ public partial class ReplayToolForm
     private EmulatorProtocolServer? _server;
     private string _initializedGame = "";
     private GameDataProcessor? _processor;
+    
     private void StartServer()
     {
-        _server = new EmulatorProtocolServer();
-        _server.OnWrite = WriteToMemory;
-        _server.OnSetup = Setup;
+        _server = new EmulatorProtocolServer
+        {
+            OnWrite = (instruction) => this._processor?.QueueWrite(instruction),
+            OnSetup = Setup,
+            OnCloseRequest = () =>
+            {
+                EDPSCleanup();
+                StartServer();
+            }
+        };
         _server.Start();
     }
 
@@ -63,10 +71,11 @@ public partial class ReplayToolForm
         );
     }
 
-    private void WriteToMemory(WriteInstruction instruction)
+    /*private void WriteToMemory(WriteInstruction instruction)
     {
         this._processor?.WriteToMemory(instruction, this.MemoryDomains);
-    }
+    }*/
+    
     private void EDPSRestart()
     {
         var gameInfo = APIs?.Emulation.GetGameInfo();

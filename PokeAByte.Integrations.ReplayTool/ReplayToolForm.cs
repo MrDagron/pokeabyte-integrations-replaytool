@@ -64,7 +64,7 @@ public sealed partial class ReplayToolForm : ToolFormBase, IExternalToolForm
         SaveState();
         if (this.MemoryDomains != null)
         {   
-            this._processor?.Update(this.MemoryDomains);
+            this._processor?.UpdateGameMemory(this.MemoryDomains);
         }
     }
     //temp, find a better place for this
